@@ -1,0 +1,36 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "hash": "116f688f1d5a2ab1390ca98c02d168f9",
+    "packages": [
+        {
+            "name": "evanhunter/pjmt",
+            "version": "1.11",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:evanhunter/PJMT.git",
+                "reference": "master"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "Toolkit_Version.php",
+                    "JPEG.php",
+                    "JFIF.php",
+                    "XMP.php"
+                ]
+            }
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}

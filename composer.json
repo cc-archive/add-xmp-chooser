@@ -1,0 +1,25 @@
+{
+  "repositories": [
+    {
+      "type": "package",
+      "package": {
+        "name": "evanhunter/pjmt",
+        "version": "1.11",
+        "source": {
+          "type": "git",
+          "url": "git@github.com:evanhunter/PJMT.git",
+          "reference": "master"
+        },
+        "autoload": {
+          "files": ["Toolkit_Version.php",
+                    "JPEG.php",
+                    "JFIF.php",
+                    "XMP.php"]
+        }
+      }
+    }
+  ],
+  "require": {
+    "evanhunter/pjmt": "1.11"
+  }
+}
