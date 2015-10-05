@@ -115,13 +115,15 @@ function handleFileUpload () {
 
     // DO NOT TRUST $_FILES['upfile']['mime'] VALUE !!
     // Check MIME Type by yourself.
+    //FIXME: handle audio, video, document files. Find a library.
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     if (false === $ext = array_search(
         $finfo->file($_FILES['upfile']['tmp_name']),
         array(
             'jpg' => 'image/jpeg',
-            //'png' => 'image/png',
-            //'gif' => 'image/gif',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
         ),
         true
     )) {
@@ -185,7 +187,7 @@ try {
   <body>
     <div class="container">
       <h1>Let's add XMP!</h1>
-      <i>But just to JPEGs at the moment...</i>
+      <i>But just to images at the moment...</i>
     <hr>
 
     <?php if (isset($_SESSION['flash'])) {?>
@@ -200,8 +202,8 @@ try {
           <div class="form-group">
             <label for="fileToUpload">Select image to upload:</label>
             <input type="file" name="upfile" id="fileToUpload"
-                   class="form-control" accept=".jpg">
-            <p class="help-block">Select a JPEG file to upload and add metadata to.</p>
+                   class="form-control">
+            <p class="help-block">Select a file to upload and add metadata to.</p>
           </div>
           <button type="submit" class="btn btn-primary">Upload Image</button>
         </form>
