@@ -2,12 +2,22 @@
 
 // Uses code from: https://github.com/cc-archive/xmp-jpeg-php/blob/master/jpeg-xmp-embed.php
 
-require_once('vendor/autoload.php');
+require_once(__DIR__ . '/vendor/autoload.php');
+
+use Monolog\Logger;
+use PHPExiftool\Writer;
+use PHPExiftool\Driver\Metadata\Metadata;
+use PHPExiftool\Driver\Metadata\MetadataBag;
+use PHPExiftool\Driver\Tag\XMPCc;
+use PHPExiftool\Driver\Tag\XMPDc;
+use PHPExiftool\Driver\Value\Mono;
 
 require_once('licenses.php');
 
 // For convenience, not security
 ini_set("session.cookie_lifetime", "1200");
+
+$logger = new Logger('exiftool');
 
 function licenseSelected ($index) {
     if (isset($_SESSION['license']) && $_SESSION['license'] == $index) {
@@ -41,83 +51,41 @@ function storeAttributionInSession () {
                });
 };
 
-function licenseXMPBlock ($licenseNumber, $title, $attributionName,
-                          $attributionUrl) {
-    //FIXME: reconcile chooser XMP with this, e.g. add xapRights:UsageTerms
-    $xmp = "<?xpacket begin='﻿' id=''?>
-<x:xmpmeta xmlns:x='adobe:ns:meta/'>
-<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-
- <rdf:Description rdf:about=''
-  xmlns:cc='http://creativecommons.org/ns#'>";
-
-    if ($attributionName) {
-        $xmp .= "
-  <cc:attributionName>" . $attributionName . "</cc:attributionName>";
-    }
-
-    $xmp .= "
-  <cc:license rdf:resource='" . license_url_for_num($licenseNumber, '4.0')
-          . "'/>
- </rdf:Description>
-";
-
-    if ($title) {
-        $xmp .= "
- <rdf:Description rdf:about=''
-  xmlns:dc='http://purl.org/dc/elements/1.1/'>
-  <dc:title>
-   <rdf:Alt>
-    <rdf:li xml:lang='x-default'>" . $title . "</rdf:li>
-   </rdf:Alt>
-  </dc:title>
- </rdf:Description>
-";
-    }
-
-    if ($attributionUrl) {
-        $xmp .= "
- <rdf:Description rdf:about=''
-  xmlns:xmpRights='http://ns.adobe.com/xap/1.0/rights/'>
-  <xmpRights:WebStatement>" . $attributionUrl . "</xmpRights:WebStatement>
- </rdf:Description>
-";
-    }
-
-    $xmp .= "
-</rdf:RDF>
-</x:xmpmeta>";
-
-    error_log($xmp);
-
-    return $xmp;
-}
-
 function applyLicense () {
+    global $logger;
     //FIXME: Dispatch on file type, complain on invalid file type
-    $xmp = licenseXMPBlock ($_SESSION['license'],
-                            $_SESSION['workTitle'],
-                            $_SESSION['attributionName'],
-                            $_SESSION['attributionUrl']);
-    if(! $xmp) {
-        $_SESSION['flash'] = "Couldn't generate XMP metadata.";
-    } else {
-        // Merge with existing data
-        //TODO: allow user to scrub original metadata
-        $header_data = get_jpeg_header_data($_SESSION['filepath']);
-        $header_modified = put_XMP_text($header_data, $xmp);
-        if (put_jpeg_header_data($_SESSION['filepath'], $_SESSION['filepath'],
-                                 $header_modified)) {
-            $_SESSION['flash'] = 'License applied! Ready for download: '
-                               . '<a href="' . $_SESSION['filepath']
-                               . '" target="_blank" download><strong>'
-                               . basename($_SESSION['filepath'])
-                               . '</strong></a>';
-        } else {
-            $_SESSION['flash'] = "Couldn't write file out with new metadata.";
-        }
+    $licenseNumber = $_SESSION['license'];
+    $licenseURL = license_url_for_num($licenseNumber, '4.0');
+    $title = $_SESSION['workTitle'];
+    $author = $_SESSION['attributionName'];
+    $authorURL = $_SESSION['attributionUrl'];
+    $metadatas = new MetadataBag();
+    $metadatas->add(new Metadata(new XMPCc\License(),
+                                 new Mono($licenseURL)));
+    if ($title) {
+      $metadatas->add(new Metadata(new XMPDc\Title(),
+                                   new Mono($title)));
     }
-};
+    if ($author) {
+      $metadatas->add(new Metadata(new XMPCc\AttributionName(),
+                                   new Mono($author)));
+    }
+    if ($authorURL) {
+      $metadatas->add(new Metadata(new XMPCc\AttributionURL(),
+                                   new Mono($authorURL)));
+    }
+    $Writer = Writer::create($logger);
+    // Doesn't erase existing metadata (that can be set if needed)
+    if ($Writer->write($_SESSION['filepath'], $metadatas) !== null) {
+        $_SESSION['flash'] = 'License applied! Ready for download: '
+                           . '<a href="' . $_SESSION['filepath']
+                           . '" target="_blank" download><strong>'
+                           . basename($_SESSION['filepath'])
+                           . '</strong></a>';
+    } else {
+        $_SESSION['flash'] = "Couldn't write file out with new metadata.";
+    }
+}
 
 function handleFileUpload () {
     unset($_SESSION['filepath']);
